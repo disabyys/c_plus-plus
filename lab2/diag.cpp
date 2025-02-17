@@ -6,18 +6,20 @@ using namespace std;
 
 int **genMatrix(int size);
 void printMatrix(int **matrix, int size);
-void diag_fill_left(int **matrix, int *array, int size);
+void diag_fill_left(int **matrix, int *array, int size, int corner);
 
 int main()
 {
-    int size;
+    int size, corner;
     printf("Enter size of matrix and array:___\b\b\b");
     scanf("%d", &size);
+    printf("Enter index of corner(ind = 0 or size-1):___\b\b\b");
+    scanf("%d", &corner);
     cout << endl;
     int **matrix = genMatrix(size);
     printMatrix(matrix, size);
     int array[size * size];
-    diag_fill_left(matrix, array, size);
+    diag_fill_left(matrix, array, size, corner);
     cout << endl;
     for (int i = 0; i < size * size; i++)
     {
@@ -68,46 +70,30 @@ void printMatrix(int **matrix, int size)
     }
 }
 
-void diag_fill_left(int **matrix, int *array, int size)
+void diag_fill_left(int **matrix, int *array, int size, int corner)
 {
     int ct = 0;
-    // for (int nb_diag = 0, line = 0, collumn = 0; nb_diag < size * 2 - 1; nb_diag++)
-    for (int nb_diag = 0, line = 0, collumn = size - 1; nb_diag < size * 2 - 1; nb_diag++)
+    for (int nb_diag = 0, line = 0, collumn = corner; nb_diag < size * 2 - 1; nb_diag++)
     {
         if (nb_diag <= size - 1)
         {
-            // for (int fir_half = 0, str = line, row = collumn; fir_half <= line; fir_half++)
-            // {
-            //     array[ct++] = matrix[str][row];
-            //     str--;
-            //     row++;
-            // }
-            // line++;
             for (int fir_half = 0, str = line, row = collumn; fir_half <= line; fir_half++)
             {
                 array[ct++] = matrix[str][row];
                 str--;
-                row--;
+                row = (corner!=0)?row-1:row+1;
             }
             line++;
         }
         else
         {
-            for (int sec_half = collumn, str = line - 1, row = collumn - 1; sec_half > 0; sec_half--)
+            for (int sec_half = corner-1, str = line - 1, row = (corner!=0)?corner-1:corner+1; sec_half > 0; sec_half--)
             {
-                // row = (row < 0) ? 0 : row;
                 array[ct++] = matrix[str][row];
                 str--;
-                row--;
+                row = (corner!=0)?row-1:row+1;
             }
-            collumn--;
-            // for (int sec_half = size * 2 - 1 - size, str = line - 1, row = collumn + 1; sec_half > collumn; sec_half--)
-            // {
-            //     array[ct++] = matrix[str][row];
-            //     str--;
-            //     row++;
-            // }
-            // collumn++;
+            collumn = (corner!=0)?collumn-1:collumn+1;
         }
     }
 }

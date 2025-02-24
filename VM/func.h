@@ -6,17 +6,15 @@ class Matrix
 {
 private:
     double **numbers = nullptr;
-    int width;
-    int height;
+    int size;
 
 public:
-    Matrix(int init_width, int init_height);
+    Matrix(int size);
     Matrix();
     double **get_pointer() { return numbers; }
     void set_pointer(double **new_p) { numbers = new_p; }
     double get_element(int h, int w) { return numbers[h][w]; }
-    double get_height() { return height; }
-    double get_width() { return width; }
+    double get_size() { return size; }
     void init();
     void print();
 };

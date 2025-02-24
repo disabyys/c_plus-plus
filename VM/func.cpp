@@ -1,26 +1,23 @@
 #include "func.h"
 
-Matrix ::Matrix(int init_width, int init_height)
+Matrix ::Matrix(int init_size)
 {
-    height = init_height;
-    width = init_width;
+    size = init_size;
     allocatiom_memory(this);
 }
 
 Matrix ::Matrix()
 {
-    cout << "Enter height of matrix:___\b\b\b";
-    cin >> height;
-    cout << "Enter width of matrix:___\b\b\b";
-    cin >> width;
+    cout << "Enter size of matrix:___\b\b\b";
+    cin >> size;
     allocatiom_memory(this);
 }
 
 void Matrix ::init()
 {
-    for (int i = 0; i < height; i++)
+    for (int i = 0; i < size; i++)
     {
-        for (int j = 0; j < width; j++)
+        for (int j = 0; j < size + 1; j++)
         {
             cin >> numbers[i][j];
         }
@@ -30,8 +27,8 @@ void Matrix ::init()
 void allocatiom_memory(Matrix *m)
 {
     double **matrix;
-    int h = m->get_height();
-    int w = m->get_width();
+    int h = m->get_size();
+    int w = m->get_size() + 1;
     matrix = new double *[h];
     for (int i = 0; i < h; i++)
     {
@@ -42,11 +39,15 @@ void allocatiom_memory(Matrix *m)
 
 void Matrix ::print()
 {
-    for (int i = 0; i < height; i++)
+    for (int i = 0; i < size; i++)
     {
-        for (int j = 0; j < width; j++)
+        for (int j = 0; j < size + 1; j++)
         {
-            cout << "|" << numbers[i][j];
+            if (j == size)
+            {
+                cout << "=";
+            }
+            printf("|%-6.1f", numbers[i][j]);
         }
         cout << "|" << endl;
     }

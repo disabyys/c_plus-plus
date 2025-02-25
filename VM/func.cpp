@@ -9,20 +9,10 @@ Matrix ::Matrix(const std::string& path)
     init(file);
 }
 
-Matrix :: Matrix(const Matrix* parent, int sub_matrix_size)
+Matrix :: Matrix(int sub_matrix_size)
 {
-    int parent_size = parent->size;
-    double **par_mat = parent->numbers;
     this->size = sub_matrix_size;
     allocatiom_memory(this);
-    double **sub_mat = this->numbers;
-    for (int i = 0; i < sub_matrix_size; i++)
-    {
-        for (int j = 0; j < sub_matrix_size; j++)
-        {
-            sub_mat[i][j] = par_mat[parent_size - sub_matrix_size + i][parent_size - sub_matrix_size + j];
-        }
-    }
 }
 
 double Matrix :: determinant(Matrix* matrix)
@@ -39,7 +29,7 @@ double Matrix :: determinant(Matrix* matrix)
     double det = 0;
     for (int j = 0; j < size; j++) 
     {
-        Matrix sub_matrix(this, size - 1);
+        Matrix sub_matrix(size - 1);
         double **sub_matrix_num = sub_matrix.numbers;
         for (int x = 1; x < size; x++)
         {
@@ -58,6 +48,46 @@ double Matrix :: determinant(Matrix* matrix)
         det += parent_matrix[0][j] * determinant(&sub_matrix) * (j % 2 == 0 ? 1 : -1);
     }
     return det;
+}
+
+void Matrix :: gaussian_method()
+{
+    double tmp_el;
+    if (!is_extended_matrix)
+    {
+        std::cout << "there is no additional column in the matrix!" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    for (int i = 0; i < size; i++)                  //Прямой ход, верхнетреугольный вид
+    {
+        tmp_el = numbers[i][i];                    
+        for (int j = size; j >= i; j--)             //деление строки на элемент диагонали
+        {
+            numbers[i][j] /= tmp_el;
+        }
+        print();
+        for (int k = i + 1; k < size; k++) // Спуск по строкам матрицы
+        {
+            tmp_el = numbers[k][i];                 //Элмент с этим значение нужно занулить 
+            for (int z = size; z >= i; z--)
+            {
+                numbers[k][z] -= tmp_el * numbers[i][z];
+            }
+            print();
+        }
+    }
+    double solutions[size];
+    solutions[size-1] = numbers[size - 1][size];
+    for (int i = size - 2; i >= 0; i--)             //обратный ход
+    {
+        solutions[i] = numbers[i][size];
+        for (int j = i + 1; j < size; j++)
+            solutions[i] -= numbers[i][j] * solutions[j];
+    }
+    for (int i = 0; i < size; i++)
+    {
+        std::cout << "x" << i + 1 << " = " << solutions[i] << std::endl;
+    }
 }
 
 void Matrix ::init(std::ifstream& file)
@@ -105,6 +135,7 @@ void Matrix ::print()
         }
         std::cout << "|" << std::endl;
     }
+    std::cout << std::endl;
 }
 
 void allocatiom_memory(Matrix *m)

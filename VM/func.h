@@ -22,10 +22,11 @@ public:
 
     //constructors
     Matrix(const std::string& path);
-    Matrix(const Matrix* parent, int size);
+    Matrix(int size);
 
     //general methods
     double determinant(Matrix* matrix);
+    void gaussian_method();
     void init(std::ifstream &file);
     void print();
 };

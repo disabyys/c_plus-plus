@@ -9,10 +9,53 @@ Matrix ::Matrix(const std::string& path)
     init(file);
 }
 
-Matrix :: Matrix(int sub_matrix_size)
+Matrix :: Matrix(Matrix* parent, int h, int w)
 {
-    this->size = sub_matrix_size;
+    int parent_size = parent->get_size();
+    if (h > parent->get_size() || h < 0)
+    {
+        fprintf(stderr, "Высота недопустима.\n");
+    }
+    if(w > parent->get_size() || w < 0)
+    {
+        fprintf(stderr, "Ширина недопустима.\n");
+    }
+    this->set_size(parent_size - 1);
     allocatiom_memory(this);
+    int cur_h = 0;
+    int cur_w = 0;
+    for (int i = 0; i < parent_size; i++)
+    {
+        for (int j = 0; j < parent_size; j++)
+        {
+            if(i != h && j != w)
+            {
+                this->set_element(cur_h, cur_w++, parent->get_element(i, j));
+            }
+            if(cur_w == this->get_size())
+            {
+                cur_h++;
+                cur_w = 0;
+            }
+        }
+
+    }
+}
+
+Matrix :: Matrix(int size, bool flag)
+{
+    is_extended_matrix = flag;
+    this->set_size(size);
+    allocatiom_memory(this);
+}
+
+Matrix :: ~Matrix()
+{
+    for (int i = 0; i < size; i++)
+    {
+        delete *(numbers + i);
+    }
+    delete numbers;
 }
 
 double Matrix :: determinant(Matrix* matrix)
@@ -25,26 +68,10 @@ double Matrix :: determinant(Matrix* matrix)
     if (size == 2) {
         return parent_matrix[0][0] * parent_matrix[1][1] - parent_matrix[0][1] * parent_matrix[1][0];
     }
-
     double det = 0;
     for (int j = 0; j < size; j++) 
     {
-        Matrix sub_matrix(size - 1);
-        double **sub_matrix_num = sub_matrix.numbers;
-        for (int x = 1; x < size; x++)
-        {
-            for (int y = 0; y < size; y++)
-            {
-                if (y < j) 
-                {
-                    sub_matrix_num[x - 1][y] = parent_matrix[x][y];
-                }
-                else if (y > j)
-                {
-                    sub_matrix_num[x - 1][y - 1] = parent_matrix[x][y];
-                }
-            }
-        }
+        Matrix sub_matrix(matrix, 0, j);
         det += parent_matrix[0][j] * determinant(&sub_matrix) * (j % 2 == 0 ? 1 : -1);
     }
     return det;
@@ -55,7 +82,7 @@ void Matrix :: gaussian_method()
     double tmp_el;
     if (!is_extended_matrix)
     {
-        std::cout << "there is no additional column in the matrix!" << std::endl;
+        std::cout << "Отсутствует дополнительный столбец в матрице" << std::endl;
         exit(EXIT_FAILURE);
     }
     for (int i = 0; i < size; i++)                  //Прямой ход, верхнетреугольный вид
@@ -98,7 +125,7 @@ void Matrix ::init(std::ifstream& file)
     while(getline(file, cur_line))
     {
         std::istringstream stream(cur_line);
-        int cur_num;
+        double cur_num;
         while(stream >> cur_num)
         {
             *((*(numbers+line))+row) = cur_num;
@@ -119,7 +146,7 @@ void Matrix ::init(std::ifstream& file)
 void Matrix ::print()
 {
     int add_row = 0;
-    if(this->is_extended_matrix)
+    if(is_extended_matrix)
     {
         add_row++;
     }
@@ -131,11 +158,63 @@ void Matrix ::print()
             {
                 std::cout << "=";
             }
-            printf("|%-6.1f", numbers[i][j]);
+            printf("|%-6.3f", numbers[i][j]);
         }
         std::cout << "|" << std::endl;
     }
     std::cout << std::endl;
+}
+
+void Matrix:: copy(Matrix &source)
+{
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < ((this->get_flag()) ? size+1 : size); j++)
+        {
+            this->set_element(i, j, source.get_element(i, j));
+        }
+    }
+}
+
+double Matrix :: addition(int h, int w)
+{
+    Matrix sub_matrix = Matrix(this, h, w);
+    return (pow(-1, (h + 1) + (w + 1)) * determinant(&sub_matrix));
+}
+
+Matrix* Matrix :: reverse_matrix()
+{
+    Matrix* rev_matrix = new Matrix(size, 0);
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            rev_matrix->set_element(i, j, this->addition(i, j));
+        }
+    }
+    rev_matrix->transposition();
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            rev_matrix->set_element(i, j, (rev_matrix->get_element(i, j) * (1 / this->determinant(this))));
+        }
+    }
+    return rev_matrix;
+}
+
+void Matrix :: transposition()
+{
+    Matrix* temp = new Matrix(size, 0);
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            temp->set_element(i, j, this->get_element(j, i));
+        }
+    }
+    this->copy(*temp);
+    delete temp;
 }
 
 void allocatiom_memory(Matrix *m)
@@ -155,16 +234,89 @@ void allocatiom_memory(Matrix *m)
     m->set_pointer(matrix);
 }
 
+double Matrix :: mark_norm(int type_matrix)
+{
+    double sum_list[size] = {0};
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            if(type_matrix == 1)
+            {
+                if(i == j){continue;}
+            }
+            sum_list[i] += (type_matrix < 2 ) ? fabs(numbers[i][j]) : numbers[i][j];
+        }
+    }
+    return max(sum_list, size);
+}
+
+double Matrix :: beta()
+{
+    double add_coll[size];
+    for (int i = 0; i < size; i++)
+    {
+        add_coll[i] = fabs(numbers[i][size]);
+    }
+    return FREE_ABSOLUTE_ACCURACY / max(add_coll, size);
+}
+
+double* Matrix :: tranform_for_iteration()
+{
+    for (int i = 0; i < size; i++)
+    {
+        double devider = numbers[i][i];
+        for (int j = 0; j < size+1; j++)
+        {
+            numbers[i][j] /= (j != size) ? -devider : devider;
+        }
+    }
+    double *add_coll = new double[size];
+    for (int i = 0; i < size; i++)
+    {
+        *(add_coll + i) = numbers[i][size];
+    }
+    return add_coll;
+}
+
+double abs_err(double reverse_mark_norm)
+{
+    return reverse_mark_norm * FREE_ABSOLUTE_ACCURACY;
+}
+
+double rel_err(double mark_norm, double reverse_mark_norm, double beta)
+{
+    return mark_norm * reverse_mark_norm * beta;
+}
+
+double max(double* vector, int size)
+{
+    double maxi = *(vector);
+    for (int i = 0; i < size; i++)
+    {
+        if(*(vector+i) > maxi)
+        {
+            maxi = *(vector + i);
+        }
+    }
+    return maxi;
+}
+
+int number_iterations(double mark_norm, double x1)
+{
+    return ceil(log(INACCURACY * (1 - mark_norm) / (x1 - ZERO_APPROXIMATION)) / log(mark_norm));
+}
+
 void file_handling(const std::string& path, Matrix* my_matrix)
 {
     std::ifstream in_file(path);
     if(!in_file)
     {
-        std::cerr << "file reading error: " << path << std::endl;
+        std::cerr << "Ошибка чтения файла " << path << std::endl;
     }
     if(!is_matrix_square(in_file, my_matrix))
     {
-        std::cout << "the matrix is not square! Check your textfile." << std::endl;
+        std::cout << "Матрица не квадратная." << std::endl;
         exit(EXIT_FAILURE);
     }
 }
@@ -196,10 +348,51 @@ bool is_matrix_square(std::ifstream& file, Matrix* my_matrix)
 int read_line(std::string& line)
 {
     std::istringstream stream(line);
-    int number, ct_num=0;
+    int ct_num=0;
+    double number;
     while (stream >> number)
     {
         ct_num++;
     }
     return ct_num;
+}
+
+void iterations(double *vector, Matrix *system, int k)
+{
+    double c[system->get_size()];
+    double temp[system->get_size()];
+    for (int i = 0; i < system->get_size(); i++)
+    {
+        c[i] = vector[i];
+    }
+    for (int i = 0; i < system->get_size(); i++)
+    {
+        temp[i] = vector[i];
+    }
+    for (int i = 0; i < k; i++)
+    {
+        for (int j = 0; j < system->get_size(); j++)
+        {
+            int ind_vec = 0;
+            double sum = 0;
+            for (int z = 0; z < system->get_size(); z++)
+            {
+                if (j == z)
+                {
+                    ind_vec++;
+                    continue;
+                }
+                sum += vector[ind_vec] * system->get_element(j, z);
+                ind_vec++;
+            }
+            temp[j] = sum + c[j];
+        }
+        std::cout << "Вектор на итерации " << i + 1 << ":   ";
+        for (int i = 0; i < system->get_size(); i++)
+        {
+            vector[i] = temp[i];
+            std::cout << vector[i] << " ";
+        }
+        std::cout << std::endl;
+    }
 }
